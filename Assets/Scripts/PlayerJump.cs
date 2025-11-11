@@ -2,14 +2,26 @@ using UnityEngine;
 
 public class PlayerJump : MonoBehaviour
 {
-    private Rigidbody2D rb;
+    [Header("Jump Settings")]
     public float jumpForce = 10f;
+    public float fallMultiplier = 2.5f;
+    public float lowJumpMultiplier = 2f;
 
-    // Ground Check variables
+    [Header("Ground Check")]
     public Transform groundCheck;
+    public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
     private bool isGrounded;
-    public float groundCheckRadius = 0.2f;
+
+    // Coyote Time
+    private float coyoteTime = 0.15f;
+    private float coyoteTimeCounter;
+
+    // Jump Buffer
+    private float jumpBufferTime = 0.15f;
+    private float jumpBufferCounter;
+
+    private Rigidbody2D rb;
 
     void Start()
     {
@@ -18,16 +30,40 @@ public class PlayerJump : MonoBehaviour
 
     void Update()
     {
+        // Ground check
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
 
-        if (Input.GetButtonDown("Jump") && isGrounded)
+        // --- Coyote Time ---
+        if (isGrounded)
+            coyoteTimeCounter = coyoteTime;
+        else
+            coyoteTimeCounter -= Time.deltaTime;
+
+        // --- Jump Buffer ---
+        if (Input.GetButtonDown("Jump"))
+            jumpBufferCounter = jumpBufferTime;
+        else
+            jumpBufferCounter -= Time.deltaTime;
+
+        // --- Combined Jump Check ---
+        if (jumpBufferCounter > 0 && coyoteTimeCounter > 0)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            jumpBufferCounter = 0;
+            coyoteTimeCounter = 0;
         }
+    }
 
-        if (Input.GetButtonUp("Jump") && rb.linearVelocity.y > 0f)
+    void FixedUpdate()
+    {
+        // --- Better Falling ---
+        if (rb.linearVelocity.y < 0)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * 0.5f);
+            rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (fallMultiplier - 1) * Time.fixedDeltaTime;
+        }
+        else if (rb.linearVelocity.y > 0 && !Input.GetButton("Jump"))
+        {
+            rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (lowJumpMultiplier - 1) * Time.fixedDeltaTime;
         }
     }
 }
