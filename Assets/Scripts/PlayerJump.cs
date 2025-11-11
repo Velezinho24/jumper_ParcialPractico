@@ -18,21 +18,16 @@ public class PlayerJump : MonoBehaviour
 
     void Update()
     {
-        // Check for ground (detecta si el GroundCheck toca el suelo)
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
 
-        // --- Basic Jump Input ---
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
-    }
 
-    // Visualiza el área de detección del suelo
-    private void OnDrawGizmosSelected()
-    {
-        if (groundCheck == null) return;
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        if (Input.GetButtonUp("Jump") && rb.linearVelocity.y > 0f)
+        {
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * 0.5f);
+        }
     }
 }
